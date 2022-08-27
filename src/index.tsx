@@ -1,15 +1,32 @@
-import React from 'react';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import React, { Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
 import reportWebVitals from './reportWebVitals';
+import { Buffer } from 'buffer';
+import configureRouter from "./routes";
+import { RouterProvider } from "react-router5";
+import { Pages } from "./Pages";
+import { ThemeProvider } from "react-bootstrap";
+
+window.Buffer = window.Buffer || Buffer;
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
+const router = configureRouter()
+router.start()
 root.render(
   <React.StrictMode>
-    <App />
+    <RouterProvider router={router}>
+      <Suspense fallback={<div>Loading</div>}>
+        <ThemeProvider
+          breakpoints={['xxxl', 'xxl', 'xl', 'lg', 'md', 'sm', 'xs', 'xxs']}
+          minBreakpoint="xxs"
+        >
+        <Pages />
+        </ThemeProvider>
+      </Suspense>
+    </RouterProvider>
   </React.StrictMode>
 );
 

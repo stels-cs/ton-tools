@@ -1,0 +1,73 @@
+import React, { useEffect, useState } from 'react';
+import * as tonMnemonic from 'tonweb-mnemonic'
+import TonWeb from "tonweb";
+import { HttpProvider } from "tonweb/dist/types/providers/http-provider";
+import { TransferForm } from "../TransferForm";
+import { Button, Col, Container, Row } from "react-bootstrap";
+
+const provider = new TonWeb.HttpProvider('https://toncenter.com/api/v2/jsonRPC');
+
+function App() {
+  const [v,setV] = useState(1);
+  const [seed, setSeed] = useState<string[]>([]);
+  const [walletV3, setWalletV3] = useState('');
+  const [walletV4, setWalletV4] = useState('');
+  const [walletV4r2, setWalletV4r2] = useState('');
+  const [hexSignature, setHexSignature] = useState('')
+
+  const setupSeed = async (seed:string[]) => {
+    const keyPair = await tonMnemonic.mnemonicToKeyPair(seed);
+    setSeed(seed);
+    const wallet = async (v:'v3R2'|'v4R1'|'v4R2') => {
+      const w = new TonWeb.Wallets.all[v]({} as HttpProvider, { publicKey: keyPair.publicKey });
+      const { address } = await w.createStateInit()
+      return address;
+    }
+    setWalletV3((await wallet('v3R2')).toString(true, true, true))
+    setWalletV4((await wallet('v4R1')).toString(true, true, true))
+    setWalletV4r2((await wallet('v4R2')).toString(true, true, true))
+    setHexSignature('');
+  }
+
+  useEffect( () => {
+    tonMnemonic.generateMnemonic().then(setupSeed);
+  }, [v])
+  return (
+    <Container>
+      <Row>
+        <Col>
+          <textarea style={{width:'100%'}} id="ownSeed"
+                    onChange={async () => {
+                      const seed = (document.getElementById('ownSeed') as any).value;
+                      await setupSeed(seed.split(/[^a-z]/gmu));
+                    }}
+                    value={seed.join(',')} placeholder="own seed"/>
+        </Col>
+      </Row>
+      <Row><Col>v3r2: {walletV3}</Col></Row>
+      <Row><Col>v4r1: {walletV4}</Col></Row>
+      <Row><Col>v4r2: {walletV4r2}</Col></Row>
+      <Row><Col>
+        <label htmlFor="hexForSign">Hex for sign</label><br/>
+        <textarea id="hexForSign"/>
+        <br/>
+        <button onClick={async () => {
+          const hex = (document.getElementById('hexForSign') as any).value;
+          if (!hex) return;
+          const keyPair = await tonMnemonic.mnemonicToKeyPair(seed);
+          const signature = TonWeb.utils.nacl.sign.detached(TonWeb.utils.hexToBytes(hex), keyPair.secretKey);
+          const hexSigned = TonWeb.utils.bytesToHex(signature);
+          setHexSignature(hexSigned);
+        }}>sign</button>
+        {!!hexSignature && <p>{hexSignature}</p>}
+      </Col></Row>
+      <Row><Col><Button variant="primary" onClick={() => setV(v => v+1)}>Generate next sid</Button></Col></Row>
+      <Row><Col>
+        <h5 style={{marginBottom:'0'}}>Send transfer payload</h5>
+        <TransferForm provider={provider} seed={seed}/>
+      </Col></Row>
+    </Container>
+  );
+}
+
+export default App;
