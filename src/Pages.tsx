@@ -1,4 +1,4 @@
-import { useRoute, useRouteNode } from "react-router5";
+import { useRouteNode } from "react-router5";
 import React from "react";
 
 const App = React.lazy(() => import("./pages/App"));
