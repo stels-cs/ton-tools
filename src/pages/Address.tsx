@@ -61,7 +61,7 @@ const Address: React.FC<{}> = (props) => {
       </Col>
     </Row>
     {!!parsed ? <Row><Col>
-      <pre>{parsed}</pre>
+      <pre style={{userSelect:'all'}}>{parsed}</pre>
     </Col></Row> : null}
   </Container>
 }
