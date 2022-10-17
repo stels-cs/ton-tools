@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Col, Row, Container, InputGroup, FormText } from "react-bootstrap";
+import { Col, Row, Container } from "react-bootstrap";
 import Form from 'react-bootstrap/Form';
 import TonWeb from "tonweb";
 
@@ -28,7 +28,7 @@ const Address: React.FC<{}> = (props) => {
         const a = tParse([
           () => clearAddress,
           () => clearAddress.trim(),
-          () => ((clearAddress.match(/[A-z0-9-\/]{48}/gmu)||[])[0] || ''),
+          () => ((clearAddress.match(/[A-z0-9-/]{48}/gmu)||[])[0] || ''),
           () => ((clearAddress.match(/0:[0-9a-z]{64}/gmu)||[])[0] || ''),
           () => '0:'+((clearAddress.match(/[0-9a-z]{64}/gmu)||[])[0] || ''),
         ])
