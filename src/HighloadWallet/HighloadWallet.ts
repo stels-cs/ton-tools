@@ -216,7 +216,7 @@ export class HighloadWallet implements Contract {
     ])
   }
 
-  sendOneTransaction(tx: { sendMode?: number; to: Address; body?: Cell; value: BN; bounce?: boolean }) {
+  sendOneTransaction(tx: { sendMode?: number; to: Address; body?: Cell; stateInit?: StateInit, value: BN; bounce?: boolean }) {
     return this.sendTransactions(
       [
         new InternalMessage({
@@ -225,6 +225,7 @@ export class HighloadWallet implements Contract {
           bounce: tx.bounce ?? true,
           body: new CommonMessageInfo({
             body: tx.body ? new CellMessage(tx.body) : undefined,
+            stateInit: tx.stateInit ? tx.stateInit : undefined,
           }),
         }),
       ],

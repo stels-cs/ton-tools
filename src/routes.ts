@@ -6,6 +6,7 @@ import browserPlugin from 'router5-plugin-browser'
 const routes =  [
   { name: 'main', path: '/' },
   { name: 'address', path: '/address' },
+  { name: 'csv', path: '/csv' },
 ]
 
 export default function configureRouter() {

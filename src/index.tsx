@@ -5,8 +5,9 @@ import reportWebVitals from './reportWebVitals';
 import { Buffer } from 'buffer';
 import configureRouter from "./routes";
 import { RouterProvider } from "react-router5";
-import { Pages } from "./Pages";
 import { ThemeProvider } from "react-bootstrap";
+
+const Pages = React.lazy(() => import('./Pages'))
 
 window.Buffer = window.Buffer || Buffer;
 

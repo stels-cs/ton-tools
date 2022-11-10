@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { delay } from "./utils";
 import Form from "react-bootstrap/Form";
 import { Button, Col, Row } from "react-bootstrap";
 import TonWeb from "tonweb";
-import { Address, Builder, Cell, toNano } from "ton";
+import { Address, Builder, Cell, StateInit, toNano } from "ton";
 import { HighloadWallet } from "./HighloadWallet/HighloadWallet";
 import { mnemonicToWalletKey } from "ton-crypto";
 import { HttpProvider } from "tonweb/dist/types/providers/http-provider";
@@ -20,6 +20,9 @@ type Inputs = {
   mode: number,
   payload: string,
   payloadType: 'text' | 'cell' | 'json',
+  stateInitCode: string,
+  stateInitData: string,
+  stateInitDataType:  'cell' | 'json',
 };
 
 export const MessageForm: React.FC<{ seed: string[], provider:HttpProvider }> = (props) => {
@@ -28,11 +31,13 @@ export const MessageForm: React.FC<{ seed: string[], provider:HttpProvider }> = 
 
   const makeTransfer = async (input: Inputs) => {
     // const keyPair = await tonMnemonic.mnemonicToKeyPair(props.seed);
-    const cell = ((type, payload) => {
+    const buildCell = ((type:Inputs['payloadType'], payload:string) => {
       switch (type) {
         case "cell":
-          return Cell.fromBoc(input.payload)[0]
+
+          return Cell.fromBoc(Buffer.from(payload, 'base64'))[0]
         case "json":
+
           return build(JSON5.parse(payload) as CellType)
         case "text":
           return (new Builder()).storeUint(0, 32)
@@ -42,7 +47,17 @@ export const MessageForm: React.FC<{ seed: string[], provider:HttpProvider }> = 
             throw new Error(`unexpected type ${(x as any)}`)
           })(type)
       }
-    })(input.payloadType, input.payload)
+    })
+
+    let stateInit: StateInit|null = null
+    if (input.stateInitCode) {
+      const code = Cell.fromBoc(Buffer.from(input.stateInitCode, 'base64'))[0];
+      const data = buildCell(input.stateInitDataType, input.stateInitData)
+      stateInit = new StateInit({
+        code: code,
+        data: data,
+      })
+    }
 
 
     if (input.fromWallet === 'hlv1') {
@@ -55,11 +70,15 @@ export const MessageForm: React.FC<{ seed: string[], provider:HttpProvider }> = 
       await hlw1.sendOneTransaction({
         to: Address.parse(input.toAddress),
         value: toNano(input.value),
-        body: cell
+        body: buildCell(input.payloadType, input.payload),
+        stateInit: stateInit||undefined,
       }).send()
 
       return
     }
+
+    const payload = buildCell(input.payloadType, input.payload);
+    const webPayload = TonWeb.boc.Cell.oneFromBoc(payload.toBoc({idx:false}).toString('hex'));
     const keyPair = await tonMnemonic.mnemonicToKeyPair(props.seed);
     const wallet = new TonWeb.Wallets.all[input.fromWallet](props.provider, { publicKey: keyPair.publicKey });
     const seqno = await wallet.methods.seqno().call();
@@ -68,14 +87,17 @@ export const MessageForm: React.FC<{ seed: string[], provider:HttpProvider }> = 
       toAddress: Address.parse(input.toAddress).toFriendly(),
       amount: TonWeb.utils.toNano(input.value),
       seqno: seqno || 0,
-      payload: TonWeb.boc.Cell.oneFromBoc(cell.toBoc({idx:false}).toString('hex')),
+      payload: webPayload,
+      stateInit: stateInit ? ((s:StateInit) => {
+        const c = new Cell();
+        s.writeTo(c);
+        return TonWeb.boc.Cell.oneFromBoc(c.toBoc({idx:false}).toString('hex'))
+      })(stateInit) : undefined,
       sendMode: 3,
     }).send();
   }
 
-  const onSubmit: SubmitHandler<Inputs> = data => {
-    console.log(data);
-    setStatus('...');
+  const processTransfer = (data:Inputs) => {
     makeTransfer(data).then(async () => {
       setStatus('Done!');
       await delay(500);
@@ -86,6 +108,19 @@ export const MessageForm: React.FC<{ seed: string[], provider:HttpProvider }> = 
       await delay(1500);
       setStatus('Send');
     })
+  }
+
+  useEffect(() => {
+    (window as any).dSend = processTransfer
+    return () => {
+      (window as any).dSend = null;
+    }
+  }, [props.seed, props.provider])
+
+  const onSubmit: SubmitHandler<Inputs> = data => {
+    console.log(data);
+    setStatus('...');
+    processTransfer(data)
   };
 
   return <Form onSubmit={handleSubmit(onSubmit)}>
@@ -127,7 +162,28 @@ export const MessageForm: React.FC<{ seed: string[], provider:HttpProvider }> = 
         <Form.Label>Payload</Form.Label>
         <Form.Control as="textarea" placeholder="" {...register('payload')} />
       </Form.Group>
+    </Row>
 
+    <Row className="mb-3">
+      <Form.Group lg={2} as={Col}>
+      </Form.Group>
+      <Form.Group as={Col}>
+        <Form.Label>StateInit code</Form.Label>
+        <Form.Control as="textarea" placeholder="base64..." {...register('stateInitCode')} />
+      </Form.Group>
+    </Row>
+    <Row className="mb-3">
+      <Form.Group lg={2} as={Col}>
+        <Form.Label>StateInit data type</Form.Label>
+        <Form.Select {...register('stateInitDataType')}>
+          <option value="cell">cell</option>
+          <option value="json">json</option>
+        </Form.Select>
+      </Form.Group>
+      <Form.Group as={Col}>
+        <Form.Label>StateInit data</Form.Label>
+        <Form.Control as="textarea" placeholder="" {...register('stateInitData')} />
+      </Form.Group>
     </Row>
     <Button variant="primary" type="submit">
       {sendStatus}
