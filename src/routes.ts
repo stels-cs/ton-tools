@@ -4,8 +4,8 @@ import browserPlugin from 'router5-plugin-browser'
 
 
 const routes =  [
-  { name: 'main', path: '/' },
-  { name: 'address', path: '/address' },
+  { name: 'address', path: '/' },
+  { name: 'main', path: '/main' },
   { name: 'csv', path: '/csv' },
 ]
 

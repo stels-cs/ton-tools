@@ -18,7 +18,6 @@ function App() {
   const [walletV4, setWalletV4] = useState('');
   const [walletV4r2, setWalletV4r2] = useState('');
   const [hightLoadWalletV1, setHightLoadWalletV1] = useState('');
-  const [hexSignature, setHexSignature] = useState('')
 
   const setupSeed = async (seed:string[]) => {
     const keyPair = await tonMnemonic.mnemonicToKeyPair(seed);
@@ -38,7 +37,6 @@ function App() {
     setWalletV4((await wallet('v4R1')).toString(true, true, true))
     setWalletV4r2((await wallet('v4R2')).toString(true, true, true))
     setHightLoadWalletV1((await wallet('HLV1')).toString(true, true, true))
-    setHexSignature('');
   }
 
   useEffect( () => {
@@ -60,21 +58,8 @@ function App() {
       <Row><Col>v4r1: {walletV4}</Col></Row>
       <Row><Col>v4r2: {walletV4r2}</Col></Row>
       <Row><Col>hlv1: {hightLoadWalletV1}</Col></Row>
-      <Row><Col>
-        <label htmlFor="hexForSign">Hex for sign</label><br/>
-        <textarea id="hexForSign"/>
-        <br/>
-        <button onClick={async () => {
-          const hex = (document.getElementById('hexForSign') as any).value;
-          if (!hex) return;
-          const keyPair = await tonMnemonic.mnemonicToKeyPair(seed);
-          const signature = TonWeb.utils.nacl.sign.detached(TonWeb.utils.hexToBytes(hex), keyPair.secretKey);
-          const hexSigned = TonWeb.utils.bytesToHex(signature);
-          setHexSignature(hexSigned);
-        }}>sign</button>
-        {!!hexSignature && <p>{hexSignature}</p>}
-      </Col></Row>
-      <Row><Col><Button variant="primary" onClick={() => setV(v => v+1)}>Generate next sid</Button></Col></Row>
+
+      <Row className="mb-3"><Col><Button variant="primary" onClick={() => setV(v => v+1)}>Generate next sid</Button></Col></Row>
       <Row>
         <Col>
           <h5 style={{marginBottom:'0'}}>Send any message</h5>
