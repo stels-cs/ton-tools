@@ -6,10 +6,10 @@ import { Buffer } from 'buffer';
 import configureRouter from "./routes";
 import { RouterProvider } from "react-router5";
 import { ThemeProvider } from "react-bootstrap";
+window.Buffer = window.Buffer || Buffer;
 
 const Pages = React.lazy(() => import('./Pages'))
 
-window.Buffer = window.Buffer || Buffer;
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
