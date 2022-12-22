@@ -115,6 +115,7 @@ export const MessageForm: React.FC<{ seed: string[], provider:HttpProvider }> = 
     return () => {
       (window as any).dSend = null;
     }
+    // eslint-disable-next-line
   }, [props.seed, props.provider])
 
   const onSubmit: SubmitHandler<Inputs> = data => {
