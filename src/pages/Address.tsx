@@ -94,11 +94,11 @@ const Address: React.FC<{}> = (props) => {
           <Form.Check onChange={() => setViews({ ...views, friendly: !views.friendly })}
                       label="Friendly Bounce (как в тонкипере)" checked={views.friendly}></Form.Check>
         </Form.Group>
-        <Form.Group className="mb-1" as={Col} controlId="classic">
+        <Form.Group className="mb-1 col-2" as={Col} controlId="classic">
           <Form.Check onChange={() => setViews({ ...views, classic: !views.classic })}
-                      label="Classic (как в tonapi)" checked={views.classic}></Form.Check>
+                      label="Raw (как в tonapi)" checked={views.classic}></Form.Check>
         </Form.Group>
-        <Form.Group className="mb-1" as={Col} controlId="nonBounce">
+        <Form.Group className="mb-1 col-4" as={Col} controlId="nonBounce">
           <Form.Check onChange={() => setViews({ ...views, nonBounce: !views.nonBounce })}
                       label="Friendly NonBounce (чтобы потерять тоны)" checked={views.nonBounce}></Form.Check>
         </Form.Group>
