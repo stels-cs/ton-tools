@@ -128,14 +128,14 @@ export const MessageForm: React.FC<{ seed: string[], provider:HttpProvider }> = 
     <Row className="mb-3">
       <Form.Group lg={2} as={Col} className="mb-3">
         <Form.Label>Wallet</Form.Label>
-        <Form.Select {...register('fromWallet')}>
+        <Form.Select defaultValue={'v3R2'} {...register('fromWallet')}>
+          <option value="v3R2">v3R2</option>
+          <option value="v4R2">v4R2</option>
+          <option value="v4R1">v4R1</option>
+          <option value="hlv1">hlv1</option>
           <option value="v2R1">v2R1</option>
           <option value="v2R2">v2R2</option>
           <option value="v3R1">v3R1</option>
-          <option value="v3R2">v3R2</option>
-          <option value="v4R1">v4R1</option>
-          <option value="v4R2">v4R2</option>
-          <option value="hlv1">hlv1</option>
         </Form.Select>
       </Form.Group>
 

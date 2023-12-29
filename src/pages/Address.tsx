@@ -19,14 +19,13 @@ function tParse(trys: (() => string)[]) {
 }
 
 const Address: React.FC<{}> = (props) => {
-  const [ list, setList ] = useState(`EQB5HQfjevz9su4ZQGcDT_4IB0IUGh5PM2vAXPU2e4O6_d2j
-0:791d07e37afcfdb2ee194067034ffe080742141a1e4f336bc05cf5367b83bafd`)
+  const [ list, setList ] = useState(``)
   const [ parsed, setParsed ] = useState<string[][]>([])
 
   const [ views, setViews ] = useState({
     friendly: true,
-    classic: true,
-    nonBounce: false,
+    classic: false,
+    nonBounce: true,
     originalLine: false,
   })
 
@@ -51,11 +50,11 @@ const Address: React.FC<{}> = (props) => {
         if (views.friendly) {
           oneLine.push(friendly)
         }
-        if (views.classic) {
-          oneLine.push(classic)
-        }
         if (views.nonBounce) {
           oneLine.push(nonBounce)
+        }
+        if (views.classic) {
+          oneLine.push(classic)
         }
         if (views.originalLine) {
           oneLine.push(line)
@@ -69,7 +68,11 @@ const Address: React.FC<{}> = (props) => {
   }, [views])
 
   useEffect(() => {
-    parseList(list)
+    if (list) {
+      parseList(list)
+    } else {
+      setParsed([])
+    }
   }, [ list, parseList, views ])
 
   return <Container className="Address">
@@ -92,15 +95,15 @@ const Address: React.FC<{}> = (props) => {
       <Row className="mb-1">
         <Form.Group className="mb-1" as={Col} controlId="flags">
           <Form.Check onChange={() => setViews({ ...views, friendly: !views.friendly })}
-                      label="Friendly Bounce (как в тонкипере)" checked={views.friendly}></Form.Check>
-        </Form.Group>
-        <Form.Group className="mb-1 col-2" as={Col} controlId="classic">
-          <Form.Check onChange={() => setViews({ ...views, classic: !views.classic })}
-                      label="Raw (как в tonapi)" checked={views.classic}></Form.Check>
+                      label="EQ (with bounce)" checked={views.friendly}></Form.Check>
         </Form.Group>
         <Form.Group className="mb-1 col-4" as={Col} controlId="nonBounce">
           <Form.Check onChange={() => setViews({ ...views, nonBounce: !views.nonBounce })}
-                      label="Friendly NonBounce (чтобы потерять тоны)" checked={views.nonBounce}></Form.Check>
+                      label="UQ (no bounce)" checked={views.nonBounce}></Form.Check>
+        </Form.Group>
+        <Form.Group className="mb-1 col-2" as={Col} controlId="classic">
+          <Form.Check onChange={() => setViews({ ...views, classic: !views.classic })}
+                      label="0:fe (raw)" checked={views.classic}></Form.Check>
         </Form.Group>
         <Form.Group className="mb-1" as={Col} controlId="originalLine">
           <Form.Check onChange={() => setViews({ ...views, originalLine: !views.originalLine })}
