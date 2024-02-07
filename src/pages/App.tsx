@@ -33,10 +33,16 @@ function App() {
       const { address } = await w.createStateInit()
       return address;
     }
-    setWalletV3((await wallet('v3R2')).toString(true, true, true))
-    setWalletV4((await wallet('v4R1')).toString(true, true, true))
-    setWalletV4r2((await wallet('v4R2')).toString(true, true, true))
-    setHightLoadWalletV1((await wallet('HLV1')).toString(true, true, true))
+    const [v3R2, v4R1, v4R2, HLV1] = await Promise.all([
+      wallet('v3R2'),
+      wallet('v4R1'),
+      wallet('v4R2'),
+      wallet('HLV1'),
+    ])
+    setWalletV3(v3R2.toString(true, true, true) + ' '+ v3R2.toString(false, true, true))
+    setWalletV4(v4R1.toString(true, true, true) + ' ' + v4R1.toString(false, true, true))
+    setWalletV4r2(v4R2.toString(true, true, true) + ' ' + v4R2.toString(false, true, true))
+    setHightLoadWalletV1(HLV1.toString(true, true, true) + ' ' + HLV1.toString(false, true, true))
   }
 
   useEffect( () => {
@@ -54,10 +60,10 @@ function App() {
                     value={seed.join(',')} placeholder="own seed"/>
         </Col>
       </Row>
-      <Row><Col>v3r2: {walletV3}</Col></Row>
-      <Row><Col>v4r1: {walletV4}</Col></Row>
-      <Row><Col>v4r2: {walletV4r2}</Col></Row>
-      <Row><Col>hlv1: {hightLoadWalletV1}</Col></Row>
+      <Row><Col><code>v3r2: {walletV3}</code></Col></Row>
+      <Row><Col><code>v4r1: {walletV4}</code></Col></Row>
+      <Row><Col><code>v4r2: {walletV4r2}</code></Col></Row>
+      <Row><Col><code>hlv1: {hightLoadWalletV1}</code></Col></Row>
 
       <Row className="mb-3"><Col><Button variant="primary" onClick={() => setV(v => v+1)}>Generate next sid</Button></Col></Row>
       <Row>
