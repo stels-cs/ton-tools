@@ -81,8 +81,23 @@ export const MessageForm: React.FC<{ seed: string[], provider:HttpProvider }> = 
     const webPayload = TonWeb.boc.Cell.oneFromBoc(payload.toBoc({idx:false}).toString('hex'));
     const keyPair = await tonMnemonic.mnemonicToKeyPair(props.seed);
     const wallet = new TonWeb.Wallets.all[input.fromWallet](props.provider, { publicKey: keyPair.publicKey });
-    const seqno = await wallet.methods.seqno().call();
-    await wallet.methods.transfer({
+
+    async function retry<T>(h:() => Promise<T>) {
+      let i = 3;
+      while (i-- > 0) {
+        try {
+          return await h()
+        } catch (e) {
+          console.warn(`retry: ${i}`, e)
+          await delay(1100)
+        }
+      }
+      throw new Error(`Failed retry`)
+    }
+
+    const seqno = await retry(() =>wallet.methods.seqno().call());
+    await delay(1100);
+    await retry(() => wallet.methods.transfer({
       secretKey: keyPair.secretKey,
       toAddress: Address.parse(input.toAddress).toFriendly(),
       amount: TonWeb.utils.toNano(input.value),
@@ -94,7 +109,7 @@ export const MessageForm: React.FC<{ seed: string[], provider:HttpProvider }> = 
         return TonWeb.boc.Cell.oneFromBoc(c.toBoc({idx:false}).toString('hex'))
       })(stateInit) : undefined,
       sendMode: 3,
-    }).send();
+    }).send());
   }
 
   const processTransfer = (data:Inputs) => {
