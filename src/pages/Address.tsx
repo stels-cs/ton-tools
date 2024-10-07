@@ -1,26 +1,15 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Col, Container, Row, Table } from "react-bootstrap";
 import Form from 'react-bootstrap/Form';
-import TonWeb from "tonweb";
 import './Address.css';
 import { CopyButton } from "../CopyButton";
 import { DownloadButton } from "../DownloadButton";
-
-function tParse(trys: (() => string)[]) {
-  for (const fn of trys) {
-    try {
-      const addr = fn()
-      return new TonWeb.Address(addr)
-    } catch (e) {
-
-    }
-  }
-  return new TonWeb.Address(trys[0]())
-}
+import { parseAddress } from "../parse-list-into-address";
 
 const Address: React.FC<{}> = (props) => {
   const [ list, setList ] = useState(``)
   const [ parsed, setParsed ] = useState<string[][]>([])
+  const [ process, setProcess ] = useState<null | { ac: AbortController }>(null)
 
   const [ views, setViews ] = useState({
     friendly: true,
@@ -29,51 +18,45 @@ const Address: React.FC<{}> = (props) => {
     originalLine: false,
   })
 
-  const parseList = useCallback((list: string) => {
-    const lines = list.split("\n")
-    const x: string[][] = []
-    for (const line of lines) {
-      const clearAddress = line.trim().split(' ')[0]
-      try {
-        const a = tParse([
-          () => clearAddress,
-          () => clearAddress.trim(),
-          () => ((clearAddress.match(/[A-z0-9-/]{48}/gmu) || [])[0] || ''),
-          () => ((clearAddress.match(/[-0-9]{1,2}:[0-9a-z]{64}/gmu) || [])[0] || ''),
-          () => '0:' + ((clearAddress.match(/[0-9a-z]{64}/gmu) || [])[0] || ''),
-          () => '0:' + ((clearAddress.match(/[0-9a-z]{66}/gmu) || [])[0] || '').replace(/^0x/u, ''),
-        ])
-        const friendly = a.toString(true, true, true, false)
-        const nonBounce = a.toString(true, true, false, false)
-        const classic = a.toString(false)
-        const oneLine: string[] = []
-        if (views.friendly) {
-          oneLine.push(friendly)
-        }
-        if (views.nonBounce) {
-          oneLine.push(nonBounce)
-        }
-        if (views.classic) {
-          oneLine.push(classic)
-        }
-        if (views.originalLine) {
-          oneLine.push(line)
-        }
-        x.push(oneLine)
-      } catch (e) {
-        x.push([ `wrong ${(e as any).message}\t${line}` ])
-      }
+  const onChangeParseTask = (list: string, v: typeof views) => {
+    if (process) {
+      process.ac.abort()
     }
-    setParsed(x)
-  }, [views])
+    if (!list) {
+      setParsed([])
+      return
+    }
+    const as = new AbortController()
+    parseAddress(list, {
+      as: as.signal,
+      friendly: v.friendly,
+      nonBounce: v.nonBounce,
+      classic: v.classic,
+      originalLine: v.originalLine,
+      onStatus: (stat) => {
+          console.log('parse stat', stat)
+      }
+    }).then(x => {
+      if (x) {
+        setParsed(x)
+      }
+    }).catch(e => {
+      if (!as.signal.aborted) {
+        console.error('fail to parse list', e)
+      }
+    })
+    setProcess({
+      ac: as,
+    })
+  }
 
   useEffect(() => {
-    if (list) {
-      parseList(list)
-    } else {
-      setParsed([])
-    }
-  }, [ list, parseList, views ])
+    onChangeParseTask(list, views)
+  }, [list, views]);
+
+  const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setList(e.target.value)
+  }
 
   return <Container className="Address">
     <Form>
@@ -85,11 +68,11 @@ const Address: React.FC<{}> = (props) => {
         </Col>
       </Row>
       <Form.Group className="mb-3" controlId="formBasicEmail">
-        <Form.Label>Список адресов</Form.Label>
+        <Form.Label column="sm">Список адресов</Form.Label>
         <Form.Control value={list}
                       rows={5}
-                      onChange={e => setList(e.target.value)}
-                      as="textarea" placeholder="EQ 0:" />
+                      onChange={onChange}
+                      as="textarea" placeholder="EQ..., 0:..., UQ..." />
       </Form.Group>
 
       <Row className="mb-1">
@@ -114,13 +97,13 @@ const Address: React.FC<{}> = (props) => {
       <Row className="mb-3">
         <Col>
           <DownloadButton getText={() => ({
-            data: [parsed.map(x => x.join(",")).join("\n")],
+            data: [ parsed.map(x => x.join(",")).join("\n") ],
             mime: 'text/csv;charset=utf-8;',
             fileName: `ton-address-${(new Date()).toISOString().split('T').shift()}.csv`
           })} variant="secondary">Download CSV</DownloadButton>
           {' '}
           <DownloadButton getText={() => ({
-            data: [parsed.map(x => x.join("\t")).join("\n")],
+            data: [ parsed.map(x => x.join("\t")).join("\n") ],
             mime: 'text/csv;charset=utf-8;',
             fileName: `ton-address-${(new Date()).toISOString().split('T').shift()}.tsv`
           })} variant="secondary">Download TSV</DownloadButton>
@@ -139,11 +122,12 @@ const Address: React.FC<{}> = (props) => {
     {!!parsed ? <Row><Col>
       <Table striped bordered>
         <tbody>
-        {parsed.map((line, index) => <tr key={index}>{
+        {parsed.slice(0, 1500).map((line, index) => <tr key={index}>{
           line.map((addr, index) => <td key={index}>{addr}</td>)
         }</tr>)}
         </tbody>
       </Table>
+      {parsed.length >= 1500 && <h4>Can't show all ${parsed.length} lines, download file of need</h4>}
     </Col></Row> : null}
   </Container>
 }
