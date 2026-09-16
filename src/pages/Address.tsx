@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Col, Container, Row, Table } from "react-bootstrap";
 import Form from 'react-bootstrap/Form';
 import './Address.css';
@@ -6,21 +6,40 @@ import { CopyButton } from "../CopyButton";
 import { DownloadButton } from "../DownloadButton";
 import { parseAddress } from "../parse-list-into-address";
 
-const Address: React.FC<{}> = (props) => {
+const ADDRESS_VIEWS_STORAGE_KEY = 'ton-tools.address.views';
+const defaultViews = {
+  friendly: true,
+  classic: false,
+  nonBounce: true,
+  originalLine: false,
+};
+
+const Address: React.FC<{}> = () => {
   const [ list, setList ] = useState(``)
   const [ parsed, setParsed ] = useState<string[][]>([])
-  const [ process, setProcess ] = useState<null | { ac: AbortController }>(null)
+  const processRef = useRef<null | { ac: AbortController }>(null)
 
-  const [ views, setViews ] = useState({
-    friendly: true,
-    classic: false,
-    nonBounce: true,
-    originalLine: false,
+  const [ views, setViews ] = useState(() => {
+    if (typeof window === 'undefined') {
+      return defaultViews
+    }
+
+    try {
+        const savedViews = window.localStorage.getItem(ADDRESS_VIEWS_STORAGE_KEY)
+
+        if (!savedViews) {
+            return defaultViews
+        }
+      return { ...defaultViews, ...JSON.parse(savedViews) }
+    } catch (error) {
+      console.error('failed to parse saved address views', error)
+      return defaultViews
+    }
   })
 
-  const onChangeParseTask = (list: string, v: typeof views) => {
-    if (process) {
-      process.ac.abort()
+  const onChangeParseTask = useCallback((list: string, v: typeof views) => {
+    if (processRef.current) {
+      processRef.current.ac.abort()
     }
     if (!list) {
       setParsed([])
@@ -45,14 +64,18 @@ const Address: React.FC<{}> = (props) => {
         console.error('fail to parse list', e)
       }
     })
-    setProcess({
+    processRef.current = {
       ac: as,
-    })
-  }
+    }
+  }, [])
 
   useEffect(() => {
     onChangeParseTask(list, views)
-  }, [list, views]);
+  }, [list, views, onChangeParseTask]);
+
+  useEffect(() => {
+    window.localStorage.setItem(ADDRESS_VIEWS_STORAGE_KEY, JSON.stringify(views))
+  }, [views]);
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setList(e.target.value)

@@ -6,7 +6,9 @@ export function * splitLineInto(input:string, sepChar:string = '\n', pack=100) {
   let start = 0
   for(let i = 0; i <= input.length; i++) {
     if (i === input.length) {
-      buff.push(input.substring(start, i))
+        if (start !== i) {
+            buff.push(input.substring(start, i))
+        }
       continue
     }
     if (input[i] === sepChar) {
